@@ -329,7 +329,6 @@ const [activeTab, setActiveTab] = useState('all')
             })}
           </div>
         )}
-              )}
 
         {/* Bird Sightings */}
         {sightings.length > 0 && (
