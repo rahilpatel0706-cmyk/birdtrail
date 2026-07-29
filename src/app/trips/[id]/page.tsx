@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { Trip, Location, LOCATION_TYPE_CONFIG, LocationType, CUISINE_TYPES } from '@/lib/types'
 import toast from 'react-hot-toast'
+import LocationSearch from '@/components/LocationSearch'
 
 export default function TripDetailPage() {
   const { id } = useParams()
@@ -644,19 +645,41 @@ function AddLocationModal({ tripId, onClose, onSuccess }: {
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
-              Name *
-            </label>
-            <input
-              type="text"
-              required
-              value={form.name}
-              onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-              className="w-full px-4 py-2.5 border border-ebird-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ebird-500"
-              placeholder="e.g., Hotel Akash Palace"
-            />
-          </div>
+          {/* Search Places */}
+<div className="bg-ebird-50 p-3 rounded-lg border border-ebird-200">
+  <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-2">
+    🔍 Search for a Place (fills in details automatically)
+  </label>
+  <LocationSearch
+    onSelect={(result) => {
+      setForm(f => ({
+        ...f,
+        name: result.name,
+        area: result.area,
+        city: result.city,
+        google_maps_link: result.google_maps_link,
+      }))
+      toast.success('Place details filled in! ✨')
+    }}
+  />
+  <p className="text-xs text-gray-500 mt-2">
+    💡 Tip: Search then edit the details below if needed
+  </p>
+</div>
+
+<div>
+  <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+    Name *
+  </label>
+  <input
+    type="text"
+    required
+    value={form.name}
+    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+    className="w-full px-4 py-2.5 border border-ebird-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ebird-500"
+    placeholder="e.g., Hotel Akash Palace"
+  />
+</div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
