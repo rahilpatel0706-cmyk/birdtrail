@@ -20,6 +20,7 @@ const [loading, setLoading] = useState(true)
 const [showForm, setShowForm] = useState(false)
 const [showEditTrip, setShowEditTrip] = useState(false)
 const [showEbird, setShowEbird] = useState(false)
+const [editingLocation, setEditingLocation] = useState<Location | null>(null)
 const [activeTab, setActiveTab] = useState('all')
 
  const loadData = async () => {
@@ -269,60 +270,69 @@ const [activeTab, setActiveTab] = useState('all')
 
                   <div className="divide-y divide-ebird-100">
                     {locs.map(loc => (
-                      <div key={loc.id} className="px-5 py-3 hover:bg-ebird-50 group">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className="font-semibold text-gray-800">{loc.name}</h4>
-                              {loc.description && (
-                                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                                  {loc.description}
-                                </span>
-                              )}
-                              {loc.cuisine_type && (
-                                <span className="text-xs text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
-                                  {loc.cuisine_type}
-                                </span>
-                              )}
-                            </div>
+  <div key={loc.id} className="px-5 py-3 hover:bg-ebird-50">
+    <div className="flex items-start justify-between gap-3">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h4 className="font-semibold text-gray-800">{loc.name}</h4>
+          {loc.description && (
+            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+              {loc.description}
+            </span>
+          )}
+          {loc.cuisine_type && (
+            <span className="text-xs text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
+              {loc.cuisine_type}
+            </span>
+          )}
+        </div>
 
-                            <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-gray-500">
-                              {loc.area && <span>📍 {loc.area}{loc.city && `, ${loc.city}`}</span>}
-                              {loc.cost && (
-                                <span className="text-ebird-600 font-medium">
-                                  💰 {loc.currency === 'INR' ? '₹' : '$'}{loc.cost}
-                                  {loc.cost_notes && <span className="text-gray-400 font-normal"> ({loc.cost_notes})</span>}
-                                </span>
-                              )}
-                              {loc.visit_notes && <span className="italic">📝 {loc.visit_notes}</span>}
-                              {loc.rating && (
-                                <span>{'⭐'.repeat(loc.rating)}</span>
-                              )}
-                            </div>
-                          </div>
+        <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-gray-500">
+          {loc.area && <span>📍 {loc.area}{loc.city && `, ${loc.city}`}</span>}
+          {loc.cost && (
+            <span className="text-ebird-600 font-medium">
+              💰 {loc.currency === 'INR' ? '₹' : '$'}{loc.cost}
+              {loc.cost_notes && <span className="text-gray-400 font-normal"> ({loc.cost_notes})</span>}
+            </span>
+          )}
+          {loc.visit_notes && <span className="italic">📝 {loc.visit_notes}</span>}
+          {loc.rating && (
+            <span>{'⭐'.repeat(loc.rating)}</span>
+          )}
+        </div>
+      </div>
 
-                          <div className="flex items-center gap-1">
-                            {loc.google_maps_link && (
-                              <a
-                                href={loc.google_maps_link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-2 text-sky-500 hover:bg-sky-50 rounded-lg"
-                                title="Open in Google Maps"
-                              >
-                                🗺️
-                              </a>
-                            )}
-                            <button
-                              onClick={() => handleDeleteLocation(loc.id)}
-                              className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100"
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+      {/* Action buttons - always visible */}
+      <div className="flex items-center gap-1 flex-shrink-0">
+        {loc.google_maps_link && (
+          <a
+            href={loc.google_maps_link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 text-sky-500 hover:bg-sky-50 rounded-lg text-base"
+            title="Open in Google Maps"
+          >
+            🗺️
+          </a>
+        )}
+        <button
+          onClick={() => setEditingLocation(loc)}
+          className="p-2 text-ebird-500 hover:text-ebird-700 hover:bg-ebird-50 rounded-lg text-base"
+          title="Edit"
+        >
+          ✏️
+        </button>
+        <button
+          onClick={() => handleDeleteLocation(loc.id)}
+          className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg text-base"
+          title="Delete"
+        >
+          🗑️
+        </button>
+      </div>
+    </div>
+  </div>
+))}
                   </div>
                 </div>
               )
@@ -407,6 +417,17 @@ const [activeTab, setActiveTab] = useState('all')
     </div>
   )
 }
+
+{editingLocation && (
+  <EditLocationModal
+    location={editingLocation}
+    onClose={() => setEditingLocation(null)}
+    onSuccess={() => {
+      setEditingLocation(null)
+      loadData()
+    }}
+  />
+)}
 
 // ============================================
 // EDIT TRIP MODAL
@@ -1294,6 +1315,301 @@ function EbirdSyncModal({ trip, onClose, onSuccess }: {
             💡 Syncing will replace existing sightings for this trip
           </p>
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// EDIT LOCATION MODAL
+// ============================================
+function EditLocationModal({ location, onClose, onSuccess }: {
+  location: Location
+  onClose: () => void
+  onSuccess: () => void
+}) {
+  const supabase = createClient()
+  const [loading, setLoading] = useState(false)
+  const [form, setForm] = useState({
+    type: location.type,
+    name: location.name || '',
+    description: location.description || '',
+    cuisine_type: location.cuisine_type || '',
+    area: location.area || '',
+    city: location.city || '',
+    google_maps_link: location.google_maps_link || '',
+    cost: location.cost?.toString() || '',
+    currency: location.currency || 'INR',
+    cost_notes: location.cost_notes || '',
+    visit_notes: location.visit_notes || '',
+    rating: location.rating || 0,
+    num_beds: location.num_beds?.toString() || '',
+    num_guests: location.num_guests?.toString() || '',
+  })
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    const { error } = await supabase.from('locations').update({
+      type: form.type,
+      name: form.name,
+      description: form.description || null,
+      cuisine_type: form.cuisine_type || null,
+      area: form.area || null,
+      city: form.city || null,
+      google_maps_link: form.google_maps_link || null,
+      cost: form.cost ? parseFloat(form.cost) : null,
+      currency: form.currency,
+      cost_notes: form.cost_notes || null,
+      visit_notes: form.visit_notes || null,
+      rating: form.rating || null,
+      num_beds: form.num_beds ? parseInt(form.num_beds) : null,
+      num_guests: form.num_guests ? parseInt(form.num_guests) : null,
+    }).eq('id', location.id)
+
+    if (error) {
+      toast.error('Failed: ' + error.message)
+    } else {
+      toast.success('Location updated! ✨')
+      onSuccess()
+    }
+    setLoading(false)
+  }
+
+  const isFood = ['food', 'restaurant', 'cafe', 'bar'].includes(form.type)
+  const isStay = form.type === 'stay'
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="sticky top-0 bg-white px-6 py-4 border-b border-ebird-100 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-ebird-800">✏️ Edit Location</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <div>
+            <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-2">
+              Type
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {(Object.entries(LOCATION_TYPE_CONFIG) as [LocationType, any][])
+                .filter(([key]) => !['gas_station', 'other'].includes(key))
+                .map(([key, cfg]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, type: key }))}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
+                      form.type === key
+                        ? 'bg-ebird-500 text-white border-ebird-500'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-ebird-300'
+                    }`}
+                  >
+                    {cfg.emoji} {cfg.label}
+                  </button>
+                ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+              Name *
+            </label>
+            <input
+              type="text"
+              required
+              value={form.name}
+              onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              className="w-full px-4 py-2.5 border border-ebird-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ebird-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+                Description
+              </label>
+              <input
+                type="text"
+                value={form.description}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                className="w-full px-3 py-2 border border-ebird-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ebird-500"
+                placeholder="e.g., Italian, Rooftop"
+              />
+            </div>
+            {isFood && (
+              <div>
+                <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+                  Cuisine
+                </label>
+                <select
+                  value={form.cuisine_type}
+                  onChange={e => setForm(f => ({ ...f, cuisine_type: e.target.value }))}
+                  className="w-full px-3 py-2 border border-ebird-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-ebird-500"
+                >
+                  <option value="">Select...</option>
+                  {CUISINE_TYPES.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+                📍 Area
+              </label>
+              <input
+                type="text"
+                value={form.area}
+                onChange={e => setForm(f => ({ ...f, area: e.target.value }))}
+                className="w-full px-3 py-2 border border-ebird-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ebird-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+                City
+              </label>
+              <input
+                type="text"
+                value={form.city}
+                onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
+                className="w-full px-3 py-2 border border-ebird-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ebird-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+              🗺️ Google Maps Link
+            </label>
+            <input
+              type="url"
+              value={form.google_maps_link}
+              onChange={e => setForm(f => ({ ...f, google_maps_link: e.target.value }))}
+              className="w-full px-3 py-2 border border-ebird-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-ebird-500"
+              placeholder="https://maps.app.goo.gl/..."
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+                💰 Cost
+              </label>
+              <input
+                type="number"
+                value={form.cost}
+                onChange={e => setForm(f => ({ ...f, cost: e.target.value }))}
+                className="w-full px-3 py-2 border border-ebird-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ebird-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+                Currency
+              </label>
+              <select
+                value={form.currency}
+                onChange={e => setForm(f => ({ ...f, currency: e.target.value }))}
+                className="w-full px-3 py-2 border border-ebird-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-ebird-500"
+              >
+                <option value="INR">₹ INR</option>
+                <option value="USD">$ USD</option>
+                <option value="EUR">€ EUR</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+                Cost Notes
+              </label>
+              <input
+                type="text"
+                value={form.cost_notes}
+                onChange={e => setForm(f => ({ ...f, cost_notes: e.target.value }))}
+                className="w-full px-3 py-2 border border-ebird-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ebird-500"
+              />
+            </div>
+          </div>
+
+          {isStay && (
+            <div className="grid grid-cols-2 gap-3 bg-sky-50 p-3 rounded-lg border border-sky-200">
+              <div>
+                <label className="block text-xs font-semibold text-sky-700 uppercase tracking-wider mb-1.5">
+                  Beds
+                </label>
+                <input
+                  type="number"
+                  value={form.num_beds}
+                  onChange={e => setForm(f => ({ ...f, num_beds: e.target.value }))}
+                  className="w-full px-3 py-2 border border-sky-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-sky-700 uppercase tracking-wider mb-1.5">
+                  Guests
+                </label>
+                <input
+                  type="number"
+                  value={form.num_guests}
+                  onChange={e => setForm(f => ({ ...f, num_guests: e.target.value }))}
+                  className="w-full px-3 py-2 border border-sky-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+              📝 Visit Notes
+            </label>
+            <textarea
+              value={form.visit_notes}
+              onChange={e => setForm(f => ({ ...f, visit_notes: e.target.value }))}
+              rows={2}
+              className="w-full px-3 py-2 border border-ebird-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ebird-500 resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-2">
+              Rating
+            </label>
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map(star => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, rating: f.rating === star ? 0 : star }))}
+                  className="text-3xl hover:scale-110 transition-transform"
+                >
+                  {star <= form.rating ? '⭐' : '☆'}
+                </button>
+              ))}
+              {form.rating > 0 && <span className="text-xs text-gray-500 ml-2">{form.rating}/5</span>}
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2.5 border border-ebird-300 text-ebird-600 rounded-lg font-medium hover:bg-ebird-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || !form.name}
+              className="flex-1 bg-ebird-500 hover:bg-ebird-600 text-white font-medium py-2.5 rounded-lg disabled:opacity-50"
+            >
+              {loading ? 'Saving...' : '💾 Save Changes'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )
