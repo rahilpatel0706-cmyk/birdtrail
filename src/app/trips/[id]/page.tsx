@@ -15,6 +15,7 @@ export default function TripDetailPage() {
   const [locations, setLocations] = useState<Location[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [showEditTrip, setShowEditTrip] = useState(false)
   const [activeTab, setActiveTab] = useState('all')
 
   const loadData = async () => {
@@ -70,7 +71,6 @@ export default function TripDetailPage() {
       ? locations.filter(l => ['food', 'restaurant', 'cafe', 'bar'].includes(l.type))
       : locations.filter(l => l.type === activeTab)
 
-  // Group by type
   const grouped = filtered.reduce((acc, loc) => {
     const key = loc.type
     if (!acc[key]) acc[key] = []
@@ -87,7 +87,6 @@ export default function TripDetailPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Navbar */}
       <nav className="bg-ebird-500 shadow-lg">
         <div className="max-w-5xl mx-auto px-4">
           <div className="flex items-center justify-between h-14">
@@ -99,15 +98,14 @@ export default function TripDetailPage() {
         </div>
       </nav>
 
-      {/* Trip Header */}
       <div className="bg-white border-b border-ebird-200">
         <div className="max-w-5xl mx-auto px-4 py-5">
           <Link href="/dashboard" className="text-sm text-ebird-600 hover:text-ebird-700">
             ← Back to Dashboard
           </Link>
 
-          <div className="flex items-start justify-between mt-3">
-            <div>
+          <div className="flex items-start justify-between mt-3 flex-wrap gap-3">
+            <div className="flex-1 min-w-0">
               <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
                 <span className="w-10 h-10 bg-ebird-100 rounded-xl flex items-center justify-center text-xl">
                   🐦
@@ -121,31 +119,73 @@ export default function TripDetailPage() {
                     {trip.end_date && trip.end_date !== trip.start_date && ` — ${formatDate(trip.end_date)}`}
                   </span>
                 )}
-                {trip.region && <span>📍 {trip.region}, {trip.country}</span>}
-                {trip.overview_map_link && (
-                  <a href={trip.overview_map_link} target="_blank" rel="noopener noreferrer"
-                     className="text-sky-600 hover:text-sky-700 font-medium">
-                    🗺️ View on Maps
-                  </a>
+                {(trip.region || trip.state) && (
+                  <span>📍 {[trip.region, trip.state, trip.country].filter(Boolean).join(', ')}</span>
+                )}
+                {trip.status && (
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                    trip.status === 'completed' ? 'bg-ebird-100 text-ebird-700' :
+                    trip.status === 'ongoing' ? 'bg-orange-100 text-orange-700' :
+                    'bg-sky-100 text-sky-700'
+                  }`}>
+                    {trip.status === 'completed' ? '✅ Completed' :
+                     trip.status === 'ongoing' ? '🔄 Ongoing' : '📋 Planned'}
+                  </span>
                 )}
               </div>
+
+              {/* Map Links Section */}
+              {(trip.overview_map_link || trip.explore_map_link) && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {trip.overview_map_link && (
+                    <a
+                      href={trip.overview_map_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 text-sky-700 hover:bg-sky-100 rounded-lg text-sm font-medium border border-sky-200"
+                    >
+                      🗺️ Overview Location
+                    </a>
+                  )}
+                  {trip.explore_map_link && (
+                    <a
+                      href={trip.explore_map_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ebird-50 text-ebird-700 hover:bg-ebird-100 rounded-lg text-sm font-medium border border-ebird-200"
+                    >
+                      🐦 Location to Explore
+                    </a>
+                  )}
+                </div>
+              )}
+
               {trip.notes && (
-                <p className="mt-3 text-sm text-gray-600 italic">{trip.notes}</p>
+                <p className="mt-3 text-sm text-gray-600 italic bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  📝 {trip.notes}
+                </p>
               )}
             </div>
 
-            <button
-              onClick={handleDeleteTrip}
-              className="text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm"
-            >
-              🗑️ Delete Trip
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowEditTrip(true)}
+                className="text-ebird-600 hover:bg-ebird-50 px-3 py-1.5 rounded-lg text-sm font-medium border border-ebird-300"
+              >
+                ✏️ Edit Trip
+              </button>
+              <button
+                onClick={handleDeleteTrip}
+                className="text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm"
+              >
+                🗑️ Delete
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-6">
-        {/* Tabs + Add Button */}
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div className="flex items-center gap-1 bg-white rounded-lg border border-ebird-200 p-1">
             {tabs.map(tab => (
@@ -172,7 +212,6 @@ export default function TripDetailPage() {
           </button>
         </div>
 
-        {/* Locations */}
         {filtered.length === 0 ? (
           <div className="bg-white rounded-lg border border-ebird-100 p-12 text-center">
             <div className="text-5xl mb-3">📍</div>
@@ -264,7 +303,6 @@ export default function TripDetailPage() {
         )}
       </div>
 
-      {/* Add Location Modal */}
       {showForm && (
         <AddLocationModal
           tripId={id as string}
@@ -275,12 +313,241 @@ export default function TripDetailPage() {
           }}
         />
       )}
+
+      {showEditTrip && trip && (
+        <EditTripModal
+          trip={trip}
+          onClose={() => setShowEditTrip(false)}
+          onSuccess={() => {
+            setShowEditTrip(false)
+            loadData()
+          }}
+        />
+      )}
     </div>
   )
 }
 
 // ============================================
-// ADD LOCATION MODAL
+// EDIT TRIP MODAL
+// ============================================
+function EditTripModal({ trip, onClose, onSuccess }: {
+  trip: Trip
+  onClose: () => void
+  onSuccess: () => void
+}) {
+  const supabase = createClient()
+  const [loading, setLoading] = useState(false)
+  const [form, setForm] = useState({
+    name: trip.name || '',
+    start_date: trip.start_date || '',
+    end_date: trip.end_date || '',
+    region: trip.region || '',
+    state: trip.state || '',
+    country: trip.country || 'India',
+    overview_map_link: trip.overview_map_link || '',
+    explore_map_link: trip.explore_map_link || '',
+    notes: trip.notes || '',
+    status: trip.status || 'completed',
+  })
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    const { error } = await supabase
+      .from('trips')
+      .update({
+        ...form,
+        start_date: form.start_date || null,
+        end_date: form.end_date || null,
+      })
+      .eq('id', trip.id)
+
+    if (error) {
+      toast.error('Failed: ' + error.message)
+    } else {
+      toast.success('Trip updated! 🎉')
+      onSuccess()
+    }
+    setLoading(false)
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="sticky top-0 bg-white px-6 py-4 border-b border-ebird-100 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-ebird-800">✏️ Edit Trip</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <div>
+            <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+              Trip Name *
+            </label>
+            <input
+              type="text"
+              required
+              value={form.name}
+              onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              className="w-full px-4 py-2.5 border border-ebird-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ebird-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+                📅 Start Date
+              </label>
+              <input
+                type="date"
+                value={form.start_date}
+                onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))}
+                className="w-full px-3 py-2 border border-ebird-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ebird-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+                End Date
+              </label>
+              <input
+                type="date"
+                value={form.end_date}
+                onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))}
+                className="w-full px-3 py-2 border border-ebird-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ebird-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+                📍 Region
+              </label>
+              <input
+                type="text"
+                value={form.region}
+                onChange={e => setForm(f => ({ ...f, region: e.target.value }))}
+                className="w-full px-3 py-2 border border-ebird-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ebird-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+                State
+              </label>
+              <input
+                type="text"
+                value={form.state}
+                onChange={e => setForm(f => ({ ...f, state: e.target.value }))}
+                className="w-full px-3 py-2 border border-ebird-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ebird-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+                🌍 Country
+              </label>
+              <select
+                value={form.country}
+                onChange={e => setForm(f => ({ ...f, country: e.target.value }))}
+                className="w-full px-3 py-2 border border-ebird-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-ebird-500"
+              >
+                <option value="India">🇮🇳 India</option>
+                <option value="USA">🇺🇸 USA</option>
+                <option value="UK">🇬🇧 UK</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+              🗺️ Overview Map Link
+            </label>
+            <input
+              type="url"
+              value={form.overview_map_link}
+              onChange={e => setForm(f => ({ ...f, overview_map_link: e.target.value }))}
+              className="w-full px-3 py-2 border border-ebird-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-ebird-500"
+              placeholder="https://maps.app.goo.gl/..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+              📍 Location to Explore (Map Link)
+            </label>
+            <input
+              type="url"
+              value={form.explore_map_link}
+              onChange={e => setForm(f => ({ ...f, explore_map_link: e.target.value }))}
+              className="w-full px-3 py-2 border border-ebird-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-ebird-500"
+              placeholder="https://maps.app.goo.gl/..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-2">
+              Trip Status
+            </label>
+            <div className="flex gap-2">
+              {[
+                { value: 'completed', label: '✅ Completed' },
+                { value: 'ongoing', label: '🔄 Ongoing' },
+                { value: 'planned', label: '📋 Planned' },
+              ].map(status => (
+                <button
+                  key={status.value}
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, status: status.value }))}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium border ${
+                    form.status === status.value
+                      ? 'bg-ebird-500 text-white border-ebird-500'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-ebird-300'
+                  }`}
+                >
+                  {status.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+              📝 Notes
+            </label>
+            <textarea
+              value={form.notes}
+              onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+              rows={3}
+              className="w-full px-3 py-2 border border-ebird-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ebird-500 resize-none"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 text-center px-4 py-2.5 border border-ebird-300 text-ebird-600 rounded-lg font-medium hover:bg-ebird-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-ebird-500 hover:bg-ebird-600 text-white font-medium py-2.5 rounded-lg disabled:opacity-50"
+            >
+              {loading ? 'Saving...' : '💾 Save Changes'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// ADD LOCATION MODAL (same as before)
 // ============================================
 function AddLocationModal({ tripId, onClose, onSuccess }: {
   tripId: string
@@ -353,7 +620,6 @@ function AddLocationModal({ tripId, onClose, onSuccess }: {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Type Selection */}
           <div>
             <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-2">
               Type
@@ -378,7 +644,6 @@ function AddLocationModal({ tripId, onClose, onSuccess }: {
             </div>
           </div>
 
-          {/* Name */}
           <div>
             <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
               Name *
@@ -393,7 +658,6 @@ function AddLocationModal({ tripId, onClose, onSuccess }: {
             />
           </div>
 
-          {/* Description + Cuisine */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
@@ -426,7 +690,6 @@ function AddLocationModal({ tripId, onClose, onSuccess }: {
             )}
           </div>
 
-          {/* Area + City */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
@@ -454,7 +717,6 @@ function AddLocationModal({ tripId, onClose, onSuccess }: {
             </div>
           </div>
 
-          {/* Google Maps Link */}
           <div>
             <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
               🗺️ Google Maps Link
@@ -468,7 +730,6 @@ function AddLocationModal({ tripId, onClose, onSuccess }: {
             />
           </div>
 
-          {/* Cost */}
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
@@ -510,7 +771,6 @@ function AddLocationModal({ tripId, onClose, onSuccess }: {
             </div>
           </div>
 
-          {/* Stay-specific */}
           {isStay && (
             <div className="grid grid-cols-2 gap-3 bg-sky-50 p-3 rounded-lg border border-sky-200">
               <div>
@@ -540,7 +800,6 @@ function AddLocationModal({ tripId, onClose, onSuccess }: {
             </div>
           )}
 
-          {/* Visit Notes */}
           <div>
             <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
               📝 Visit Notes
@@ -554,7 +813,6 @@ function AddLocationModal({ tripId, onClose, onSuccess }: {
             />
           </div>
 
-          {/* Rating */}
           <div>
             <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-2">
               Rating
