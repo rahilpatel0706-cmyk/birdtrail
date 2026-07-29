@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@theme {
+  /* eBird-inspired color palette */
+  --color-ebird-50: #f0f7f1;
+  --color-ebird-100: #dceedd;
+  --color-ebird-200: #b8ddb9;
+  --color-ebird-300: #8bc48e;
+  --color-ebird-400: #5da562;
+  --color-ebird-500: #4A7C59;
+  --color-ebird-600: #2D5F3E;
+  --color-ebird-700: #264d33;
+  --color-ebird-800: #1e3d29;
+  --color-ebird-900: #183221;
+
+  --color-sunset-400: #ff9538;
+  --color-sunset-500: #F9A825;
+  --color-sunset-600: #E65100;
+
+  --color-sky-500: #3b99f6;
+  --color-sky-600: #1976D2;
+  --color-sky-700: #1e64b3;
+
+  --color-bark-500: #a88363;
+  --color-bark-600: #9b7257;
+}
+
+body {
+  background-color: var(--color-ebird-50);
+  color: #1e3d29;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-ebird-100);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-ebird-400);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-ebird-500);
+}
