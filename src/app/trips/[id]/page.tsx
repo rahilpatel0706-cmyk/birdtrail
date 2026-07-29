@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import { Trip, Location, LOCATION_TYPE_CONFIG, LocationType, CUISINE_TYPES } from '@/lib/types'
 import toast from 'react-hot-toast'
 import LocationSearch from '@/components/LocationSearch'
+import { fetchMultipleChecklists, getUniqueSpecies, extractChecklistId } from '@/lib/ebird'
 
 export default function TripDetailPage() {
   const { id } = useParams()
@@ -13,20 +14,24 @@ export default function TripDetailPage() {
   const supabase = createClient()
 
   const [trip, setTrip] = useState<Trip | null>(null)
-  const [locations, setLocations] = useState<Location[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [showEditTrip, setShowEditTrip] = useState(false)
-  const [activeTab, setActiveTab] = useState('all')
+const [locations, setLocations] = useState<Location[]>([])
+const [sightings, setSightings] = useState<any[]>([])
+const [loading, setLoading] = useState(true)
+const [showForm, setShowForm] = useState(false)
+const [showEditTrip, setShowEditTrip] = useState(false)
+const [showEbird, setShowEbird] = useState(false)
+const [activeTab, setActiveTab] = useState('all')
 
-  const loadData = async () => {
-    setLoading(true)
-    const { data: tripData } = await supabase.from('trips').select('*').eq('id', id).single()
-    const { data: locData } = await supabase.from('locations').select('*').eq('trip_id', id).order('created_at')
-    setTrip(tripData)
-    setLocations(locData || [])
-    setLoading(false)
-  }
+ const loadData = async () => {
+  setLoading(true)
+  const { data: tripData } = await supabase.from('trips').select('*').eq('id', id).single()
+  const { data: locData } = await supabase.from('locations').select('*').eq('trip_id', id).order('created_at')
+  const { data: sightData } = await supabase.from('bird_sightings').select('*').eq('trip_id', id).order('common_name')
+  setTrip(tripData)
+  setLocations(locData || [])
+  setSightings(sightData || [])
+  setLoading(false)
+}
 
   useEffect(() => {
     loadData()
@@ -133,6 +138,11 @@ export default function TripDetailPage() {
                      trip.status === 'ongoing' ? '🔄 Ongoing' : '📋 Planned'}
                   </span>
                 )}
+                {sightings.length > 0 && (
+  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+    🐦 {sightings.length} species
+  </span>
+)}
               </div>
 
               {/* Map Links Section */}
@@ -179,6 +189,12 @@ export default function TripDetailPage() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
+  <button
+    onClick={() => setShowEbird(true)}
+    className="text-orange-600 hover:bg-orange-50 px-3 py-1.5 rounded-lg text-sm font-medium border border-orange-300"
+  >
+    🐦 eBird Sync
+  </button>
   <ShareButton trip={trip} onUpdate={loadData} />
   <button
     onClick={() => setShowEditTrip(true)}
@@ -313,6 +329,85 @@ export default function TripDetailPage() {
             })}
           </div>
         )}
+              )}
+
+        {/* Bird Sightings */}
+        {sightings.length > 0 && (
+          <div className="mt-6 bg-white rounded-lg border border-ebird-100 overflow-hidden">
+            <div className="px-5 py-3 flex items-center gap-2 bg-orange-100">
+              <span className="text-lg">🐦</span>
+              <h3 className="font-bold text-sm uppercase tracking-wider text-orange-700">
+                Bird Sightings
+              </h3>
+              <span className="text-xs bg-white/60 px-2 py-0.5 rounded-full font-mono font-bold">
+                {sightings.length} species
+              </span>
+            </div>
+
+            <div className="divide-y divide-ebird-100 max-h-96 overflow-y-auto">
+              {sightings.map(bird => (
+                <div key={bird.id} className="px-5 py-2.5 hover:bg-orange-50 flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-gray-800 text-sm">
+                      {bird.common_name}
+                    </div>
+                    {bird.scientific_name && (
+                      <div className="text-xs text-gray-500 italic">
+                        {bird.scientific_name}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right text-xs text-gray-500">
+                    {bird.count ? (
+                      <span className="font-mono font-bold text-orange-600">×{bird.count}</span>
+                    ) : (
+                      <span className="text-gray-400">✓ seen</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+                )}
+
+        {/* Bird Sightings */}
+        {sightings.length > 0 && (
+          <div className="mt-6 bg-white rounded-lg border border-ebird-100 overflow-hidden">
+            <div className="px-5 py-3 flex items-center gap-2 bg-orange-100">
+              <span className="text-lg">🐦</span>
+              <h3 className="font-bold text-sm uppercase tracking-wider text-orange-700">
+                Bird Sightings
+              </h3>
+              <span className="text-xs bg-white/60 px-2 py-0.5 rounded-full font-mono font-bold">
+                {sightings.length} species
+              </span>
+            </div>
+
+            <div className="divide-y divide-ebird-100 max-h-96 overflow-y-auto">
+              {sightings.map(bird => (
+                <div key={bird.id} className="px-5 py-2.5 hover:bg-orange-50 flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-gray-800 text-sm">
+                      {bird.common_name}
+                    </div>
+                    {bird.scientific_name && (
+                      <div className="text-xs text-gray-500 italic">
+                        {bird.scientific_name}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right text-xs text-gray-500">
+                    {bird.count ? (
+                      <span className="font-mono font-bold text-orange-600">×{bird.count}</span>
+                    ) : (
+                      <span className="text-gray-400">✓ seen</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {showForm && (
@@ -326,12 +421,23 @@ export default function TripDetailPage() {
         />
       )}
 
-      {showEditTrip && trip && (
+            {showEditTrip && trip && (
         <EditTripModal
           trip={trip}
           onClose={() => setShowEditTrip(false)}
           onSuccess={() => {
             setShowEditTrip(false)
+            loadData()
+          }}
+        />
+      )}
+
+      {showEbird && trip && (
+        <EbirdSyncModal
+          trip={trip}
+          onClose={() => setShowEbird(false)}
+          onSuccess={() => {
+            setShowEbird(false)
             loadData()
           }}
         />
@@ -1032,5 +1138,201 @@ function ShareButton({ trip, onUpdate }: { trip: Trip, onUpdate: () => void }) {
         </div>
       )}
     </>
+  )
+}
+
+// ============================================
+// EBIRD SYNC MODAL
+// ============================================
+function EbirdSyncModal({ trip, onClose, onSuccess }: {
+  trip: Trip
+  onClose: () => void
+  onSuccess: () => void
+}) {
+  const supabase = createClient()
+  const [checklistIds, setChecklistIds] = useState<string[]>(
+    (trip as any).ebird_checklist_ids?.length > 0
+      ? (trip as any).ebird_checklist_ids
+      : ['']
+  )
+  const [loading, setLoading] = useState(false)
+  const [progress, setProgress] = useState('')
+
+  const addChecklistField = () => {
+    setChecklistIds([...checklistIds, ''])
+  }
+
+  const removeChecklistField = (index: number) => {
+    setChecklistIds(checklistIds.filter((_, i) => i !== index))
+  }
+
+  const updateChecklistId = (index: number, value: string) => {
+    const updated = [...checklistIds]
+    updated[index] = value
+    setChecklistIds(updated)
+  }
+
+  const handleSync = async () => {
+    const validIds = checklistIds
+      .map(id => id.trim())
+      .filter(id => id.length > 0)
+      .map(extractChecklistId)
+
+    if (validIds.length === 0) {
+      toast.error('Add at least one checklist ID')
+      return
+    }
+
+    setLoading(true)
+    setProgress('Fetching from eBird...')
+
+    try {
+      // Fetch data from eBird
+      const { observations, errors } = await fetchMultipleChecklists(validIds)
+
+      if (errors.length > 0) {
+        toast.error(`Some checklists failed: ${errors.join(', ')}`)
+      }
+
+      if (observations.length === 0) {
+        toast.error('No observations found')
+        setLoading(false)
+        return
+      }
+
+      setProgress(`Found ${observations.length} observations. Deduplicating...`)
+
+      // Get unique species
+      const uniqueSpecies = getUniqueSpecies(observations)
+
+      setProgress(`Saving ${uniqueSpecies.length} species...`)
+
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not logged in')
+
+      // Delete existing sightings for this trip
+      await supabase.from('bird_sightings').delete().eq('trip_id', trip.id)
+
+      // Insert new sightings
+      const sightingsToInsert = uniqueSpecies.map(obs => ({
+        trip_id: trip.id,
+        user_id: user.id,
+        common_name: obs.comName,
+        scientific_name: obs.sciName,
+        species_code: obs.speciesCode,
+        count: obs.howMany,
+        observation_date: obs.obsDt ? obs.obsDt.split(' ')[0] : null,
+        location_name: obs.locName,
+        ebird_checklist_id: obs.subId,
+      }))
+
+      const { error: insertError } = await supabase
+        .from('bird_sightings')
+        .insert(sightingsToInsert)
+
+      if (insertError) throw insertError
+
+      // Update trip with checklist IDs
+      await supabase
+        .from('trips')
+        .update({ ebird_checklist_ids: validIds })
+        .eq('id', trip.id)
+
+      toast.success(`🎉 Imported ${uniqueSpecies.length} species!`)
+      onSuccess()
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to sync')
+      console.error(err)
+    }
+
+    setLoading(false)
+    setProgress('')
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="sticky top-0 bg-white px-6 py-4 border-b border-ebird-100 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-orange-700 flex items-center gap-2">
+            🐦 eBird Sync
+          </h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-gray-700">
+            <p className="font-medium mb-1">📋 How to get checklist IDs:</p>
+            <ol className="list-decimal list-inside text-xs space-y-1 text-gray-600">
+              <li>Go to your eBird checklist page</li>
+              <li>Copy the URL or just the ID (looks like <code className="bg-white px-1 rounded">S123456789</code>)</li>
+              <li>Paste below — add multiple for the whole trip</li>
+            </ol>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider">
+              eBird Checklist IDs or URLs
+            </label>
+
+            {checklistIds.map((id, index) => (
+              <div key={index} className="flex gap-2">
+                <input
+                  type="text"
+                  value={id}
+                  onChange={e => updateChecklistId(index, e.target.value)}
+                  placeholder="e.g., S123456789 or full eBird URL"
+                  className="flex-1 px-3 py-2 border border-orange-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+                {checklistIds.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeChecklistField(index)}
+                    className="px-3 py-2 text-red-500 hover:bg-red-50 rounded-lg"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+
+            <button
+              type="button"
+              onClick={addChecklistField}
+              className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+            >
+              + Add another checklist
+            </button>
+          </div>
+
+          {progress && (
+            <div className="bg-sky-50 border border-sky-200 rounded-lg p-3 text-sm text-sky-700 flex items-center gap-2">
+              <span className="animate-spin">⏳</span> {progress}
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2.5 border border-ebird-300 text-ebird-600 rounded-lg font-medium hover:bg-ebird-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSync}
+              disabled={loading}
+              className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Syncing...' : '🐦 Import from eBird'}
+            </button>
+          </div>
+
+          <p className="text-xs text-gray-500 text-center">
+            💡 Syncing will replace existing sightings for this trip
+          </p>
+        </div>
+      </div>
+    </div>
   )
 }
