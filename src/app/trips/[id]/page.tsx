@@ -414,11 +414,8 @@ const [activeTab, setActiveTab] = useState('all')
           }}
         />
       )}
-    </div>
-  )
-}
 
-{editingLocation && (
+      {editingLocation && (
   <EditLocationModal
     location={editingLocation}
     onClose={() => setEditingLocation(null)}
@@ -428,6 +425,9 @@ const [activeTab, setActiveTab] = useState('all')
     }}
   />
 )}
+    </div>
+  )
+}
 
 // ============================================
 // EDIT TRIP MODAL
