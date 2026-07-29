@@ -368,46 +368,9 @@ const [activeTab, setActiveTab] = useState('all')
             </div>
           </div>
                 )}
+        </div>        
 
-        {/* Bird Sightings */}
-        {sightings.length > 0 && (
-          <div className="mt-6 bg-white rounded-lg border border-ebird-100 overflow-hidden">
-            <div className="px-5 py-3 flex items-center gap-2 bg-orange-100">
-              <span className="text-lg">🐦</span>
-              <h3 className="font-bold text-sm uppercase tracking-wider text-orange-700">
-                Bird Sightings
-              </h3>
-              <span className="text-xs bg-white/60 px-2 py-0.5 rounded-full font-mono font-bold">
-                {sightings.length} species
-              </span>
-            </div>
-
-            <div className="divide-y divide-ebird-100 max-h-96 overflow-y-auto">
-              {sightings.map(bird => (
-                <div key={bird.id} className="px-5 py-2.5 hover:bg-orange-50 flex items-center justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-800 text-sm">
-                      {bird.common_name}
-                    </div>
-                    {bird.scientific_name && (
-                      <div className="text-xs text-gray-500 italic">
-                        {bird.scientific_name}
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-right text-xs text-gray-500">
-                    {bird.count ? (
-                      <span className="font-mono font-bold text-orange-600">×{bird.count}</span>
-                    ) : (
-                      <span className="text-gray-400">✓ seen</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+        
 
       {showForm && (
         <AddLocationModal
