@@ -136,30 +136,40 @@ export default function TripDetailPage() {
               </div>
 
               {/* Map Links Section */}
-              {(trip.overview_map_link || trip.explore_map_link) && (
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {trip.overview_map_link && (
-                    <a
-                      href={trip.overview_map_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 text-sky-700 hover:bg-sky-100 rounded-lg text-sm font-medium border border-sky-200"
-                    >
-                      🗺️ Overview Location
-                    </a>
-                  )}
-                  {trip.explore_map_link && (
-                    <a
-                      href={trip.explore_map_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ebird-50 text-ebird-700 hover:bg-ebird-100 rounded-lg text-sm font-medium border border-ebird-200"
-                    >
-                      🐦 Location to Explore
-                    </a>
-                  )}
-                </div>
-              )}
+              {(trip.overview_map_link || trip.explore_map_link || trip.ebird_trip_link) && (
+  <div className="flex flex-wrap gap-2 mt-3">
+    {trip.overview_map_link && (
+      <a
+        href={trip.overview_map_link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 text-sky-700 hover:bg-sky-100 rounded-lg text-sm font-medium border border-sky-200"
+      >
+        🗺️ Overview Location
+      </a>
+    )}
+    {trip.explore_map_link && (
+      <a
+        href={trip.explore_map_link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ebird-50 text-ebird-700 hover:bg-ebird-100 rounded-lg text-sm font-medium border border-ebird-200"
+      >
+        📍 Location to Explore
+      </a>
+    )}
+    {trip.ebird_trip_link && (
+      <a
+        href={trip.ebird_trip_link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-lg text-sm font-medium border border-orange-200"
+      >
+        🐦 View on eBird
+      </a>
+    )}
+  </div>
+)}
 
               {trip.notes && (
                 <p className="mt-3 text-sm text-gray-600 italic bg-gray-50 p-3 rounded-lg border border-gray-100">
@@ -168,20 +178,21 @@ export default function TripDetailPage() {
               )}
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowEditTrip(true)}
-                className="text-ebird-600 hover:bg-ebird-50 px-3 py-1.5 rounded-lg text-sm font-medium border border-ebird-300"
-              >
-                ✏️ Edit Trip
-              </button>
-              <button
-                onClick={handleDeleteTrip}
-                className="text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm"
-              >
-                🗑️ Delete
-              </button>
-            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+  <ShareButton trip={trip} onUpdate={loadData} />
+  <button
+    onClick={() => setShowEditTrip(true)}
+    className="text-ebird-600 hover:bg-ebird-50 px-3 py-1.5 rounded-lg text-sm font-medium border border-ebird-300"
+  >
+    ✏️ Edit Trip
+  </button>
+  <button
+    onClick={handleDeleteTrip}
+    className="text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm"
+  >
+    🗑️ Delete
+  </button>
+</div>
           </div>
         </div>
       </div>
@@ -348,6 +359,7 @@ function EditTripModal({ trip, onClose, onSuccess }: {
     country: trip.country || 'India',
     overview_map_link: trip.overview_map_link || '',
     explore_map_link: trip.explore_map_link || '',
+    ebird_trip_link: trip.ebird_trip_link || '',
     notes: trip.notes || '',
     status: trip.status || 'completed',
   })
@@ -486,6 +498,20 @@ function EditTripModal({ trip, onClose, onSuccess }: {
               placeholder="https://maps.app.goo.gl/..."
             />
           </div>
+
+          <div>
+  <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+    🐦 eBird Trip Link
+  </label>
+  <input
+    type="url"
+    value={form.ebird_trip_link}
+    onChange={e => setForm(f => ({ ...f, ebird_trip_link: e.target.value }))}
+    className="w-full px-3 py-2 border border-ebird-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-ebird-500"
+    placeholder="https://ebird.org/tripreport/..."
+  />
+</div>
+
 
           <div>
             <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-2">
@@ -865,5 +891,146 @@ function AddLocationModal({ tripId, onClose, onSuccess }: {
         </form>
       </div>
     </div>
+  )
+}
+// ============================================
+// SHARE BUTTON
+// ============================================
+function ShareButton({ trip, onUpdate }: { trip: Trip, onUpdate: () => void }) {
+  const supabase = createClient()
+  const [showShare, setShowShare] = useState(false)
+  const [copying, setCopying] = useState(false)
+
+  const shareUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/share/${trip.id}`
+    : ''
+
+  const togglePublic = async () => {
+    const { error } = await supabase
+      .from('trips')
+      .update({ is_public: !trip.is_public })
+      .eq('id', trip.id)
+
+    if (error) {
+      toast.error('Failed to update')
+    } else {
+      toast.success(trip.is_public ? '🔒 Trip is now private' : '🌍 Trip is now public!')
+      onUpdate()
+    }
+  }
+
+  const copyLink = async () => {
+    setCopying(true)
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      toast.success('📋 Link copied!')
+    } catch {
+      toast.error('Failed to copy')
+    }
+    setTimeout(() => setCopying(false), 2000)
+  }
+
+  return (
+    <>
+      <button
+        onClick={() => setShowShare(true)}
+        className="text-sky-600 hover:bg-sky-50 px-3 py-1.5 rounded-lg text-sm font-medium border border-sky-300"
+      >
+        📤 Share
+      </button>
+
+      {showShare && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="px-6 py-4 border-b border-ebird-100 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-ebird-800">📤 Share Trip</h2>
+              <button onClick={() => setShowShare(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Public toggle */}
+              <div className={`p-4 rounded-lg border-2 ${
+                trip.is_public ? 'bg-ebird-50 border-ebird-300' : 'bg-gray-50 border-gray-200'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-sm text-gray-800">
+                      {trip.is_public ? '🌍 Public' : '🔒 Private'}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-0.5">
+                      {trip.is_public
+                        ? 'Anyone with the link can view'
+                        : 'Only you can see this trip'}
+                    </div>
+                  </div>
+                  <button
+                    onClick={togglePublic}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      trip.is_public ? 'bg-ebird-500' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      trip.is_public ? 'translate-x-6' : 'translate-x-1'
+                    }`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Share link */}
+              {trip.is_public && (
+                <div>
+                  <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+                    🔗 Share this link
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={shareUrl}
+                      className="flex-1 px-3 py-2 border border-ebird-200 rounded-lg text-xs font-mono bg-gray-50"
+                      onClick={e => e.currentTarget.select()}
+                    />
+                    <button
+                      onClick={copyLink}
+                      className={`px-4 py-2 rounded-lg font-medium text-sm ${
+                        copying
+                          ? 'bg-ebird-100 text-ebird-700'
+                          : 'bg-ebird-500 text-white hover:bg-ebird-600'
+                      }`}
+                    >
+                      {copying ? '✓ Copied' : 'Copy'}
+                    </button>
+                  </div>
+
+                  {/* Quick share buttons */}
+                  <div className="flex gap-2 mt-3">
+                    <a
+                      href={`https://wa.me/?text=${encodeURIComponent(`Check out my birding trip: ${trip.name}\n${shareUrl}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600"
+                    >
+                      💬 WhatsApp
+                    </a>
+                    <a
+                      href={`mailto:?subject=${encodeURIComponent(`My birding trip: ${trip.name}`)}&body=${encodeURIComponent(`Check out my trip:\n${shareUrl}`)}`}
+                      className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-sky-500 text-white rounded-lg text-sm font-medium hover:bg-sky-600"
+                    >
+                      ✉️ Email
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {!trip.is_public && (
+                <p className="text-xs text-gray-500 text-center">
+                  Turn on Public to get a shareable link
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }

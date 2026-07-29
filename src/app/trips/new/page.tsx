@@ -10,17 +10,18 @@ export default function NewTripPage() {
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({
-    name: '',
-    start_date: '',
-    end_date: '',
-    region: '',
-    state: '',
-    country: 'India',
-    overview_map_link: '',
-    explore_map_link: '',
-    notes: '',
-    status: 'completed',
-  })
+  name: '',
+  start_date: '',
+  end_date: '',
+  region: '',
+  state: '',
+  country: 'India',
+  overview_map_link: '',
+  explore_map_link: '',
+  ebird_trip_link: '',
+  notes: '',
+  status: 'completed',
+})
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -197,7 +198,25 @@ export default function NewTripPage() {
                 placeholder="https://maps.app.goo.gl/..."
               />
             </div>
-
+            
+            
+            <div>
+  <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-1.5">
+    🐦 eBird Trip Link
+  </label>
+  <input
+    type="url"
+    value={form.ebird_trip_link}
+    onChange={e => setForm(f => ({ ...f, ebird_trip_link: e.target.value }))}
+    className="w-full px-3 py-2 border border-ebird-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-ebird-500"
+    placeholder="https://ebird.org/tripreport/..."
+  />
+  <p className="text-xs text-gray-500 mt-1">
+    Paste your eBird trip report or checklist URL
+  </p>
+</div>
+            
+            
             {/* Status */}
             <div>
               <label className="block text-xs font-semibold text-ebird-600 uppercase tracking-wider mb-2">

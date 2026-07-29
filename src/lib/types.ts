@@ -16,6 +16,7 @@ export interface Trip {
   country: string
   overview_map_link?: string
   explore_map_link?: string
+  ebird_trip_link?: string
   cover_photo_url?: string
   notes?: string
   is_public: boolean
