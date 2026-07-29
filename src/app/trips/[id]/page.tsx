@@ -492,14 +492,14 @@ function EditTripModal({ trip, onClose, onSuccess }: {
             </label>
             <div className="flex gap-2">
               {[
-                { value: 'completed', label: '✅ Completed' },
-                { value: 'ongoing', label: '🔄 Ongoing' },
-                { value: 'planned', label: '📋 Planned' },
-              ].map(status => (
-                <button
-                  key={status.value}
-                  type="button"
-                  onClick={() => setForm(f => ({ ...f, status: status.value }))}
+                 { value: 'completed', label: '✅ Completed' },
+                 { value: 'ongoing', label: '🔄 Ongoing' },
+                 { value: 'planned', label: '📋 Planned' },
+                ].map(status => (
+             <button
+                key={status.value}
+                type="button"
+                onClick={() => setForm(f => ({ ...f, status: status.value as any }))}
                   className={`px-4 py-2 rounded-lg text-sm font-medium border ${
                     form.status === status.value
                       ? 'bg-ebird-500 text-white border-ebird-500'
